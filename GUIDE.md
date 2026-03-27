@@ -57,7 +57,7 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 
 **MCPs to use:** PostgreSQL, LangSmith, Sentry, BetterStack
 
-**Our CLAUDE.md files:** [root](https://github.com/unisonlabs/nori-backend/blob/main/CLAUDE.md) · [agents](https://github.com/unisonlabs/nori-backend/blob/main/app/agents/nori_agent/v2/CLAUDE.md) · [workers](https://github.com/unisonlabs/nori-backend/blob/main/app/workers/taskiq/CLAUDE.md) · [tests](https://github.com/unisonlabs/nori-backend/blob/main/tests/CLAUDE.md) · [loinc data](https://github.com/unisonlabs/nori-backend/blob/main/data/loinc/CLAUDE.md)
+**Our CLAUDE.md files:** [root](https://github.com/unisonlabs/nori-backend/blob/main/CLAUDE.md) · [agents](https://github.com/unisonlabs/nori-backend/blob/main/app/agents/nori_agent/v2/CLAUDE.md) · [conversation eval](https://github.com/unisonlabs/nori-backend/blob/main/app/services/conversation_eval/CLAUDE.md) · [workers](https://github.com/unisonlabs/nori-backend/blob/main/app/workers/taskiq/CLAUDE.md) · [tests](https://github.com/unisonlabs/nori-backend/blob/main/tests/CLAUDE.md) · [loinc data](https://github.com/unisonlabs/nori-backend/blob/main/data/loinc/CLAUDE.md)
 
 **Gotchas and patterns:**
 - Connect the PostgreSQL MCP to your local dev DB — Claude can inspect schema and verify migrations without you copy-pasting SQL
