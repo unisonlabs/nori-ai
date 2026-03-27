@@ -118,7 +118,7 @@ check:
 	@which npx >/dev/null 2>&1 && echo "  ✓ npx" || echo "  ✗ npx — install Node.js from https://nodejs.org"
 	@echo ""
 	@echo "MCP Servers:"
-	@claude mcp list --scope user 2>/dev/null || echo "  ⚠️  Could not list MCPs"
+	@claude mcp list 2>/dev/null || echo "  ⚠️  Could not list MCPs"
 	@echo ""
 	@echo "Hooks:"
 	@if [ -f "$(SETTINGS_FILE)" ] && jq -e '.hooks.Notification' "$(SETTINGS_FILE)" >/dev/null 2>&1; then \
