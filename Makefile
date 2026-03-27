@@ -124,6 +124,12 @@ plugins:
 check:
 	@echo "Checking setup..."
 	@echo ""
+	@echo "Prerequisites:"
+	@which claude >/dev/null 2>&1 && echo "  ✓ claude" || echo "  ✗ claude — install from https://docs.anthropic.com/en/docs/claude-code"
+	@which gh >/dev/null 2>&1 && echo "  ✓ gh" || echo "  ✗ gh — install from https://cli.github.com"
+	@which jq >/dev/null 2>&1 && echo "  ✓ jq" || echo "  ✗ jq — install with: brew install jq"
+	@which npx >/dev/null 2>&1 && echo "  ✓ npx" || echo "  ✗ npx — install Node.js from https://nodejs.org"
+	@echo ""
 	@echo "MCP Servers:"
 	@claude mcp list --scope user 2>/dev/null || echo "  ⚠️  Could not list MCPs"
 	@echo ""
@@ -135,9 +141,12 @@ check:
 			echo "  ✗ /$(dir) — run 'make skills'"; \
 		fi;)
 	@echo ""
-	@echo "CLI tools:"
-	@which claude >/dev/null 2>&1 && echo "  ✓ claude" || echo "  ✗ claude — install from https://docs.anthropic.com/en/docs/claude-code"
-	@which gh >/dev/null 2>&1 && echo "  ✓ gh" || echo "  ✗ gh — install from https://cli.github.com"
+	@echo "Hooks:"
+	@if [ -f "$(SETTINGS_FILE)" ] && jq -e '.hooks.Notification' "$(SETTINGS_FILE)" >/dev/null 2>&1; then \
+		echo "  ✓ Notification hooks installed"; \
+	else \
+		echo "  ✗ Notification hooks missing — run 'make hooks'"; \
+	fi
 
 # ──────────────────────────────────────────────
 # Clean — remove installed skills
