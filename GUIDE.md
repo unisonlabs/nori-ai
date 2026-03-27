@@ -6,6 +6,7 @@ For background on Claude Code concepts, see the [official docs](https://docs.ant
 - **[MCP servers](https://docs.anthropic.com/en/docs/claude-code/mcp-servers)** connect Claude to external services (Linear, Sentry, databases, etc.)
 - **[Skills](https://docs.anthropic.com/en/docs/claude-code/skills)** are reusable workflows you invoke as slash commands (e.g., `/fix-issue`)
 - **[Hooks](https://docs.anthropic.com/en/docs/claude-code/hooks)** are shell commands that auto-run at specific points in Claude's lifecycle
+- **[Plugins](https://code.claude.com/docs/en/discover-plugins)** extend Claude Code with skills, agents, hooks, and MCP servers. The other bullet points above are subsets of plugins. For example, the pr-review-toolkit plugin will utilize several skills.
 
 ---
 
@@ -15,7 +16,7 @@ For background on Claude Code concepts, see the [official docs](https://docs.ant
 
 We only adopt MCPs that are (1) officially maintained by the product owner or (2) actively maintained with strong community adoption.
 
-**Note:** We prefer CLIs over MCPs where both are available. For example, Claude uses `gh` (GitHub CLI) effectively for most PR/issue workflows — the GitHub MCP is optional and mainly useful for cross-repo searches. If a tool has a good CLI, try that first.
+**Note:** We prefer CLIs over MCPs where both are available. For example, Claude uses `gh` (GitHub CLI) effectively for most PR/issue workflows — the GitHub MCP is optional and mainly useful for cross-repo searches. If a tool has a good CLI, try that first. cURL works quite well, over MCPs, too.
 
 | MCP | What it gives Claude | Auth |
 |-----|---------------------|------|
@@ -59,6 +60,7 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 **MCPs to use:** PostgreSQL, LangSmith, Sentry, BetterStack
 
 **Our CLAUDE.md files:** [root](https://github.com/unisonlabs/nori-backend/blob/main/CLAUDE.md) · [agents](https://github.com/unisonlabs/nori-backend/blob/main/app/agents/nori_agent/v2/CLAUDE.md) · [conversation eval](https://github.com/unisonlabs/nori-backend/blob/main/app/services/conversation_eval/CLAUDE.md) · [workers](https://github.com/unisonlabs/nori-backend/blob/main/app/workers/taskiq/CLAUDE.md) · [tests](https://github.com/unisonlabs/nori-backend/blob/main/tests/CLAUDE.md) · [loinc data](https://github.com/unisonlabs/nori-backend/blob/main/data/loinc/CLAUDE.md)
+We won't keep this list up-to-date as more are added. Please be mindful of adding CLAUDE.md's where they'd be useful (: Having one in most meaty subdirectories is helpful.
 
 **Gotchas and patterns:**
 - Connect the PostgreSQL MCP to your local dev DB — Claude can inspect schema and verify migrations without you copy-pasting SQL
@@ -91,7 +93,7 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 - Never let Claude modify production env vars directly — all changes go through `render.yaml` review
 - For CI failures: `gh run view --log-failed | claude "why did this fail?"` is the fastest debug loop
 - Our CI is two workflows: `test-and-gate.yml` (runs pytest with PostgreSQL 16 + pgvector + Redis) and `deploy.yml` (triggered on main after tests pass, deploys via `scripts/deploy.py` → Render API)
-- Worker scaling changes go through `render.yaml`. Claude can suggest changes but always review — worker configs affect our TaskIQ queue routing
+- We introduced auto-scaling for workers [here](https://github.com/unisonlabs/nori-backend/tree/main/autoscaler)
 - BetterStack has heartbeat monitoring per worker (`BETTERSTACK_HEARTBEAT_URL_<WORKER>`) — use the MCP to check if workers are healthy
 
 ### Security
@@ -116,18 +118,21 @@ The most effective general workflow:
 2. **Execute** — exit Plan Mode, Claude implements
 3. **Clear** — `/clear` before the next unrelated task
 
-Context pollution from mixing tasks in one session is the #1 cause of bad output.
+Context pollution from mixing tasks in one session is the #1 cause of bad output. Sometimes, I'll even run a separate claude session and ask it to thoroughly review a PR before I push it to a draft. The better a PR is before we let Greptile review, the more positive signal we can get from Greptile.
 
 ### Large Feature Development (with Codepipe)
 
 See the [Codepipe repo](https://github.com/unisonlabs/codepipe) for full docs and [examples/nori_defaults.py](https://github.com/unisonlabs/codepipe/blob/main/examples/nori_defaults.py) for our shared pipeline configuration.
 
-1. **Write a strong spec.** Collaborate with Claude — provide heavy feedback and product direction. Takes 1-2 hours focused. Use Codepipe's plan phase to ground the spec in the actual codebase
-2. **Create Linear tickets from the spec.** Keep tickets focused — PRs of a few hundred lines go smoother. Feed the spec into Claude and ask it to create the tickets
+1. **Write a strong spec.** Collaborate with Claude — provide heavy feedback and product direction. Takes 1-2 hours focused, sometimes more for larger tasks! It is _not_ worth rushing this part of the process...
+2. **Create Linear tickets from the spec.** Keep tickets focused — PRs of a few hundred lines go smoother. Feed the spec into Claude and ask it to create the tickets. Direct it to split up work in an optimal way: what can be parallelized? how can we structure tickets so that they don't lead to huge diffs? Reduce merge conflicts, etc.
 3. **Set up a Codepipe pipeline.** Tell Claude to familiarize itself with Codepipe first. Branch dependencies when tickets depend on each other; parallelize when independent
-4. **Run the pipeline** on Mac Mini. Codepipe reads from Linear, runs configured skills (e.g., `/simplify`, `/review-my-changes`), goes through Greptile reviews, ensures CI passes
+    - Ideally we'd have a persistent agent that is familiar with Codepipe that we can leverage for writing codepipe pipelines. I will look into this.
+4. **Run the pipeline.** Codepipe reads from Linear, runs configured skills (e.g., `/simplify`, `/review-my-changes`), goes through Greptile reviews, ensures CI passes
 5. **Review PRs.** Go through each, leave comments, pull them into a Claude Code session to discuss and fix
 6. **Merge and manually test.** E2e manual testing consistently catches things automated checks miss — formatting, UX, integration quirks
+
+All Codepipe best practices are in the project README.
 
 ### Context Management
 
