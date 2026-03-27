@@ -1,12 +1,12 @@
-.PHONY: setup mcps skills hooks plugins check clean
+.PHONY: setup mcps hooks plugins check
 
 # ──────────────────────────────────────────────
 # Full setup — run this on day one
 # ──────────────────────────────────────────────
 
-setup: mcps skills hooks plugins
+setup: mcps hooks plugins
 	@echo ""
-	@echo "✅ Setup complete. Run 'make check' to verify."
+	@echo "Setup complete. Run 'make check' to verify."
 
 # ──────────────────────────────────────────────
 # MCP Servers
@@ -72,18 +72,6 @@ mcp-github:
 	@echo ""
 
 # ──────────────────────────────────────────────
-# Skills — copy to personal ~/.claude/skills/
-# ──────────────────────────────────────────────
-
-SKILL_DIRS := fix-issue review-my-changes security-audit deps-check incident-response
-
-skills:
-	@echo "→ Copying skills to ~/.claude/skills/..."
-	@mkdir -p $(addprefix ~/.claude/skills/,$(SKILL_DIRS))
-	@$(foreach dir,$(SKILL_DIRS),cp skills/$(dir)/SKILL.md ~/.claude/skills/$(dir)/SKILL.md;)
-	@echo "  Installed: $(SKILL_DIRS)"
-
-# ──────────────────────────────────────────────
 # Hooks — notification hooks for macOS
 # ──────────────────────────────────────────────
 
@@ -110,7 +98,6 @@ plugins:
 	@echo "→ Plugins must be enabled inside Claude Code."
 	@echo "  Run /plugin and enable:"
 	@echo "    • pr-review-toolkit"
-	@echo "    • code-review"
 	@echo "    • code-simplifier"
 	@echo "    • figma"
 	@echo "    • github"
@@ -133,26 +120,9 @@ check:
 	@echo "MCP Servers:"
 	@claude mcp list --scope user 2>/dev/null || echo "  ⚠️  Could not list MCPs"
 	@echo ""
-	@echo "Skills:"
-	@$(foreach dir,$(SKILL_DIRS),\
-		if [ -f ~/.claude/skills/$(dir)/SKILL.md ]; then \
-			echo "  ✓ /$(dir)"; \
-		else \
-			echo "  ✗ /$(dir) — run 'make skills'"; \
-		fi;)
-	@echo ""
 	@echo "Hooks:"
 	@if [ -f "$(SETTINGS_FILE)" ] && jq -e '.hooks.Notification' "$(SETTINGS_FILE)" >/dev/null 2>&1; then \
 		echo "  ✓ Notification hooks installed"; \
 	else \
 		echo "  ✗ Notification hooks missing — run 'make hooks'"; \
 	fi
-
-# ──────────────────────────────────────────────
-# Clean — remove installed skills
-# ──────────────────────────────────────────────
-
-clean:
-	@echo "→ Removing skills from ~/.claude/skills/..."
-	@$(foreach dir,$(SKILL_DIRS),rm -rf ~/.claude/skills/$(dir);)
-	@echo "  Done. MCPs and hooks are left in place."
