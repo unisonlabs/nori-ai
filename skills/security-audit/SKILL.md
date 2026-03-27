@@ -14,10 +14,10 @@ Run a comprehensive security audit on the codebase (or the specified path: $ARGU
    - A03 Injection — check for SQL injection, XSS, command injection in user inputs
    - A04 Insecure Design — check for missing rate limiting, business logic flaws
    - A05 Security Misconfiguration — check for default creds, verbose errors, debug modes
-   - A06 Vulnerable Components — run `npm audit` / `bundle audit` / equivalent
+   - A06 Vulnerable Components — run `pip-audit` (backend) and `npm audit` (mobile)
    - A07 Auth Failures — check session management, password policies
    - A08 Data Integrity — check deserialization, CI/CD pipeline security
-   - A09 Logging Failures — check for missing audit logs, PII in logs
+   - A09 Logging Failures — check for missing audit logs, PII in logs (verify Presidio redaction is applied)
    - A10 SSRF — check URL validation, internal network access controls
 
 3. **Secret scanning.** Search for hardcoded API keys, passwords, tokens, and secrets in:
