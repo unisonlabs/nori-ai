@@ -1,6 +1,6 @@
 # Claude Code: Skills, Tips & Best Practices
 
-Our team's setup and playbook for Claude Code. Run the setup, read the guide, ship faster.
+Our team's setup and playbook for Claude Code.
 
 ## Getting Started
 
