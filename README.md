@@ -34,7 +34,7 @@ Copy to `.claude/skills/` (project, shared) or `~/.claude/skills/` (personal). O
 
 | Skill | What it does |
 |-------|-------------|
-| [`/fix-issue`](skills/fix-issue/SKILL.md) | Fix a GitHub issue end-to-end |
+| [`/fix-issue`](skills/fix-issue/SKILL.md) | Fix a Linear ticket end-to-end |
 | [`/review-my-changes`](skills/review-my-changes/SKILL.md) | Self-review changes before PR |
 | [`/security-audit`](skills/security-audit/SKILL.md) | OWASP Top 10 + secret scan + dependency audit |
 | [`/deps-check`](skills/deps-check/SKILL.md) | Audit dependencies for vulnerabilities and staleness |
