@@ -99,11 +99,11 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 **MCPs to use:** Sentry, PostgreSQL (read-only)
 
 **Gotchas and patterns:**
-- Run `/security-audit` before major releases — it checks OWASP Top 10, scans for hardcoded secrets, and runs `pip-audit` + `npm audit`
+- Run `/security-audit` before major releases — it checks OWASP Top 10, scans for hardcoded secrets, and runs `poetry audit` + `npm audit`
 - We use **Presidio** for PII redaction in logs. When reviewing logging code, verify redaction is applied — especially for health data
 - Always connect Claude to databases with **read-only** credentials. The PostgreSQL MCP is read-only by default
 - Our auth uses JWT (ES256) with email/phone verification codes (no passwords) — when reviewing auth code, check token validation, code expiry, and that secrets aren't logged
-- For dependency audits: `pip-audit` (backend) and `npm audit` (mobile). Run `/deps-check` regularly
+- For dependency audits: `poetry audit` (backend) and `npm audit` (mobile). Run `/deps-check` regularly
 - We use [claude-code-security-review](https://github.com/anthropics/claude-code-security-review) as a GitHub Action to automatically review PRs for security vulnerabilities. It posts inline comments with identified concerns and recommended fixes.
 
 ---
