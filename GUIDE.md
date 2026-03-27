@@ -15,12 +15,14 @@ For background on Claude Code concepts, see the [official docs](https://docs.ant
 
 We only adopt MCPs that are (1) officially maintained by the product owner or (2) actively maintained with strong community adoption.
 
+**Note:** We prefer CLIs over MCPs where both are available. For example, Claude uses `gh` (GitHub CLI) effectively for most PR/issue workflows — the GitHub MCP is optional and mainly useful for cross-repo searches. If a tool has a good CLI, try that first.
+
 | MCP | What it gives Claude | Auth |
 |-----|---------------------|------|
 | **Linear** | Read/create/update issues, projects, cycles | OAuth (browser prompt) |
 | **BetterStack** | Query logs, uptime monitors, dashboards | OAuth (browser prompt) |
 | **Sentry** | Error issues, stack traces, release health, Seer AI analysis | OAuth (browser prompt) |
-| **PostgreSQL** | Read-only access to local dev DB — schema, queries, data | `DATABASE_URL` env var |
+| **PostgreSQL** | Read-only access to dev and production DBs — schema, queries, data | `DATABASE_URL` env var |
 | **Context7** | Up-to-date library docs (Expo, React Native, FastAPI, etc.) | None (optional API key for rate limits) |
 | **Help Scout** | Customer conversations, threads, inboxes | OAuth2 Client Credentials |
 | **LangSmith** | Agent traces, prompts, datasets, experiments | API key + workspace ID |
@@ -32,7 +34,7 @@ All servers are installed with `--scope user` (global). Run `make mcps` to insta
 - **Help Scout:** Create a Private App in Help Scout → My Apps ([docs](https://developer.helpscout.com/mailbox-api/overview/authentication/)). Copy the App ID and App Secret.
 - **LangSmith:** Get your API key and workspace ID from [LangSmith settings](https://smith.langchain.com/settings). The workspace ID is required since our key has access to multiple workspaces.
 - **GitHub:** Create a [Personal Access Token](https://github.com/settings/tokens) with `repo` scope. Optional if you already have `gh` CLI authenticated — Claude uses `gh` effectively for most workflows.
-- **PostgreSQL:** Set `DATABASE_URL` in your shell environment. The Makefile reads it automatically.
+- **PostgreSQL:** Set `DATABASE_URL` in your shell environment. The Makefile reads it automatically. **Pro tip:** Also add a read-only production connection string to your dotenv (e.g., `DATABASE_URL_PROD_READONLY`). Being able to query production data for debugging is a gamechanger — Claude can look up real user data, check migration state, and verify production behavior without you having to run queries manually. **Never use a non-readonly connection string.**
 
 ### Plugins
 
@@ -45,7 +47,6 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 | **figma** | Translates Figma designs to code. `/figma:implement-design`, `/figma:code-connect-components`, `/figma:create-design-system-rules`. |
 | **github** | GitHub-aware skills and workflows. |
 | **swift-lsp** | LSP-powered symbol navigation and error detection for Swift native modules. |
-| **Playwright** | Browser automation and E2E testing. Worth considering. |
 
 ---
 
@@ -63,7 +64,7 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 - Connect the PostgreSQL MCP to your local dev DB — Claude can inspect schema and verify migrations without you copy-pasting SQL
 - Use LangSmith MCP to debug agent traces inline. "Pull the LangSmith trace for conversation_id X" is faster than switching to the UI
 - When writing new services, always tell Claude to follow an existing service as a reference pattern — our conventions (async/await, no Optional with defaults, RequestBaseModel/ResponseBaseModel) won't be obvious otherwise
-- For Alembic migrations: always ask Claude to check for the migration hash update (`migrations/migration-hash.txt`). The pre-commit hook handles this normally, but Claude bypasses hooks
+- For Alembic migrations: ALWAYS auto-generate migration files (`alembic revision --autogenerate`), never write them by hand. Also always ask Claude to check for the migration hash update (`migrations/migration-hash.txt`) — the pre-commit hook handles this normally, but Claude bypasses hooks
 - Our TaskIQ workers have specialized queues (short-running, long-running, metrics, backfill). When debugging worker issues, point Claude at the specific worker type and ask it to check Redis stream length and BetterStack heartbeats
 - Claude tends to guess database column names and types. Force it to check via the PostgreSQL MCP or by reading the model files
 
@@ -79,7 +80,6 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 - For new screens, always reference an existing screen in `app/(tabs)/` so Claude picks up our routing and layout patterns
 - Our health data sync uses parallel uploads with gzip compression. When debugging sync issues, the chain is: `hooks/useHealthSync.ts` → `services/healthSyncService.ts` → background fetch config
 - We use `react-native-reanimated` for animations and `@shopify/react-native-skia` for rendering. Claude defaults to Animated API — redirect it
-- For Maestro E2E tests, reference existing flows in `maestro/`
 - `flash-list` not `FlatList` for performant lists
 
 ### Infrastructure (Render / GitHub Actions)
@@ -104,7 +104,6 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 - Always connect Claude to databases with **read-only** credentials. The PostgreSQL MCP is read-only by default
 - Our auth uses JWT (ES256) with email/phone verification codes (no passwords) — when reviewing auth code, check token validation, code expiry, and that secrets aren't logged
 - For dependency audits: `poetry audit` (backend) and `npm audit` (mobile). Run `/deps-check` regularly
-- We use [claude-code-security-review](https://github.com/anthropics/claude-code-security-review) as a GitHub Action to automatically review PRs for security vulnerabilities. It posts inline comments with identified concerns and recommended fixes.
 
 ---
 
@@ -134,6 +133,7 @@ See the [Codepipe repo](https://github.com/unisonlabs/codepipe) for full docs an
 
 - **`/clear` between unrelated tasks.** Most important habit
 - **`/compact <focus>`** to summarize with focus (e.g., `/compact Focus on the API changes`)
+- **`/btw` for side questions.** Ask Claude a quick question without interrupting your current task or polluting conversation context. The answer appears in an overlay and never enters the conversation history. Great for "what does this function do?" or "remind me what we decided about X" while Claude is mid-task
 - **Subagents for research.** "Use subagents to investigate X" — explores in a separate context
 - **Scope requests.** "Look at the auth module" not "investigate how the app works"
 - **Name sessions** with `/rename` (e.g., "oauth-migration") for easy retrieval via `claude --resume`
