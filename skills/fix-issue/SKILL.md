@@ -11,6 +11,5 @@ Analyze and fix the Linear ticket: $ARGUMENTS.
 3. Search the codebase for relevant files
 4. Implement the necessary changes
 5. Write and run tests to verify the fix
-6. Ensure code passes linting and type checking
-7. Create a descriptive commit message referencing the ticket ID
-8. Push and create a PR linking the ticket
+6. Create a descriptive commit message referencing the ticket ID
+7. Push and create a draft PR linking the ticket

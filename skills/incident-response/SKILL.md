@@ -20,10 +20,9 @@ Help debug a production incident. Sentry issue or description: $ARGUMENTS
 
 3. **Check recent deploys:**
    ```
-   git log --oneline -20
-   gh release list --limit 5
+   git log --oneline -20 origin/main
    ```
-   Identify any recent changes that could have caused the issue.
+   Deploys are triggered automatically when `test-and-gate` passes on main (via `scripts/deploy.py` → Render API). Check recent merges to main to identify changes that could have caused the issue.
 
 4. **Find the relevant code.** Based on the stack trace:
    - Read the files and functions involved

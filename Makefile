@@ -30,9 +30,14 @@ mcp-sentry:
 		https://mcp.sentry.dev/mcp 2>/dev/null || true
 
 mcp-postgres:
-	@echo "→ Installing PostgreSQL MCP (read-only, local dev DB)..."
-	@claude mcp add-json postgres --scope user \
-		'{"command":"npx","args":["-y","@modelcontextprotocol/server-postgres","postgresql://localhost/nori_development"]}' 2>/dev/null || true
+	@if [ -z "$$DATABASE_URL" ]; then \
+		echo "→ Skipping PostgreSQL MCP — DATABASE_URL is not set."; \
+		echo "  Set DATABASE_URL in your environment, then re-run 'make mcp-postgres'."; \
+	else \
+		echo "→ Installing PostgreSQL MCP (read-only, using DATABASE_URL)..."; \
+		claude mcp add-json postgres --scope user \
+			"{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-postgres\",\"$$DATABASE_URL\"]}" 2>/dev/null || true; \
+	fi
 
 mcp-context7:
 	@echo "→ Installing Context7 MCP (library docs)..."
@@ -82,12 +87,19 @@ skills:
 # Hooks — notification hooks for macOS
 # ──────────────────────────────────────────────
 
-hooks:
-	@echo "→ Installing notification hooks..."
-	@claude config set hooks.Notification '[{"hooks":[{"type":"command","command":"osascript -e '\''display notification \"Awaiting your input\" with title \"Claude Code\"'\''"}]}]' 2>/dev/null || \
-		(echo "  ⚠️  Auto-install failed. Copy hooks manually from GUIDE.md")
+SETTINGS_FILE := $(HOME)/.claude/settings.json
 
-	@claude config set hooks.Stop '[{"hooks":[{"type":"command","command":"osascript -e '\''display notification \"Response ready\" with title \"Claude Code\"'\''"}]}]' 2>/dev/null || true
+hooks:
+	@echo "→ Installing notification hooks into $(SETTINGS_FILE)..."
+	@mkdir -p $(HOME)/.claude
+	@if [ -f "$(SETTINGS_FILE)" ]; then \
+		jq --slurpfile hooks hooks.json '.hooks = ((.hooks // {}) * $$hooks[0])' "$(SETTINGS_FILE)" > "$(SETTINGS_FILE).tmp" && \
+		mv "$(SETTINGS_FILE).tmp" "$(SETTINGS_FILE)" && \
+		echo "  ✓ Hooks merged into existing settings.json"; \
+	else \
+		jq -n --slurpfile hooks hooks.json '{hooks: $$hooks[0]}' > "$(SETTINGS_FILE)" && \
+		echo "  ✓ Created settings.json with hooks"; \
+	fi
 
 # ──────────────────────────────────────────────
 # Plugins — remind user to enable in Claude Code
