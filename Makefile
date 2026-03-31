@@ -102,6 +102,11 @@ plugins:
 	@echo "    • figma"
 	@echo "    • github"
 	@echo "    • swift-lsp"
+	@echo "    • codex (openai/codex-plugin-cc)"
+	@echo ""
+	@echo "  For codex, also run:"
+	@echo "    npm install -g @openai/codex   (if not already installed)"
+	@echo "    /codex:setup                   (inside Claude Code to verify)"
 	@echo ""
 
 # ──────────────────────────────────────────────

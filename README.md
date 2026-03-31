@@ -17,6 +17,7 @@ make setup
 - figma
 - github
 - swift-lsp
+- codex ([openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc)) — requires `npm install -g @openai/codex` + OpenAI API key or ChatGPT subscription
 
 Run `make check` at any time to verify your setup.
 
@@ -39,6 +40,10 @@ Skills are committed in each project repo under `.claude/skills/` — they're sh
 | `/security-audit` | OWASP Top 10 + secret scan + dependency audit | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/security-audit/SKILL.md) · [mobile](https://github.com/unisonlabs/nori-mobile/blob/main/.claude/skills/security-audit/SKILL.md) |
 | `/deps-check` | Audit dependencies for vulnerabilities and staleness | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/deps-check/SKILL.md) · [mobile](https://github.com/unisonlabs/nori-mobile/blob/main/.claude/skills/deps-check/SKILL.md) |
 | `/incident-response` | Correlate Sentry + BetterStack + deploys for incidents | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/incident-response/SKILL.md) |
+| `/codex:setup` | Verify Codex CLI installation and configure review gates | plugin: [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc) |
+| `/codex:rescue` | Delegate investigation or fix to Codex | plugin |
+| `/codex:review` | Read-only code review via Codex | plugin |
+| `/codex:adversarial-review` | Challenge review questioning design decisions | plugin |
 
 ## Related Repos
 

@@ -48,6 +48,7 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 | **figma** | Translates Figma designs to code. `/figma:implement-design`, `/figma:code-connect-components`, `/figma:create-design-system-rules`. |
 | **github** | GitHub-aware skills and workflows. |
 | **swift-lsp** | LSP-powered symbol navigation and error detection for Swift native modules. |
+| **codex** ([openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc)) | Delegate tasks to OpenAI Codex from Claude Code. `/codex:rescue` for investigation/fixes, `/codex:review` for code review, `/codex:adversarial-review` for challenge reviews. Requires `npm install -g @openai/codex`. |
 
 ---
 
