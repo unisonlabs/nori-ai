@@ -119,7 +119,7 @@ echo ""
 # 1. Homebrew
 # ──────────────────────────────────────────────
 
-section "1/18 — Homebrew"
+section "1/17 — Homebrew"
 
 if command -v brew &>/dev/null; then
   ok "Homebrew is already installed"
@@ -140,7 +140,7 @@ fi
 # 2. pyenv + Python 3.11.11
 # ──────────────────────────────────────────────
 
-section "2/18 — pyenv + Python 3.11.11"
+section "2/17 — pyenv + Python 3.11.11"
 
 if command -v pyenv &>/dev/null; then
   ok "pyenv is already installed"
@@ -177,7 +177,7 @@ ok "Python 3.11.11 set as global"
 # 3. Poetry
 # ──────────────────────────────────────────────
 
-section "3/18 — Poetry"
+section "3/17 — Poetry"
 
 if command -v poetry &>/dev/null; then
   ok "Poetry is already installed"
@@ -195,7 +195,7 @@ fi
 # 4. PostgreSQL 17
 # ──────────────────────────────────────────────
 
-section "4/18 — PostgreSQL 17"
+section "4/17 — PostgreSQL 17"
 
 if brew list postgresql@17 &>/dev/null; then
   ok "PostgreSQL 17 is already installed"
@@ -213,9 +213,14 @@ export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 # Start as brew service
 if brew services list 2>/dev/null | grep -q "postgresql@17.*started"; then
   ok "PostgreSQL 17 is already running"
+elif pg_isready -q 2>/dev/null; then
+  ok "PostgreSQL 17 is already running (started by another user)"
 else
-  brew services start postgresql@17
-  ok "PostgreSQL 17 started"
+  brew services start postgresql@17 2>/dev/null || {
+    warn "Could not start PostgreSQL as a brew service (no GUI session)"
+    echo "  If another user on this Mac mini is already running PostgreSQL, that's fine."
+    echo "  Otherwise, log in via the macOS GUI and run: brew services start postgresql@17"
+  }
 fi
 
 # pgvector
@@ -231,7 +236,7 @@ fi
 # 5. Redis
 # ──────────────────────────────────────────────
 
-section "5/18 — Redis"
+section "5/17 — Redis"
 
 if command -v redis-server &>/dev/null; then
   ok "Redis is already installed"
@@ -245,16 +250,21 @@ fi
 
 if brew services list 2>/dev/null | grep -q "redis.*started"; then
   ok "Redis is already running"
+elif redis-cli ping &>/dev/null; then
+  ok "Redis is already running (started by another user)"
 else
-  brew services start redis
-  ok "Redis started"
+  brew services start redis 2>/dev/null || {
+    warn "Could not start Redis as a brew service (no GUI session)"
+    echo "  If another user on this Mac mini is already running Redis, that's fine."
+    echo "  Otherwise, log in via the macOS GUI and run: brew services start redis"
+  }
 fi
 
 # ──────────────────────────────────────────────
 # 6. Node.js
 # ──────────────────────────────────────────────
 
-section "6/18 — Node.js"
+section "6/17 — Node.js"
 
 if command -v node &>/dev/null; then
   ok "Node.js is already installed ($(node --version))"
@@ -270,7 +280,7 @@ fi
 # 7. Claude Code
 # ──────────────────────────────────────────────
 
-section "7/18 — Claude Code"
+section "7/17 — Claude Code"
 
 if command -v claude &>/dev/null; then
   ok "Claude Code is already installed"
@@ -286,7 +296,7 @@ fi
 # 8. Pi (coding agent)
 # ──────────────────────────────────────────────
 
-section "8/18 — Pi (coding agent)"
+section "8/17 — Pi (coding agent)"
 
 if command -v pi &>/dev/null || npm list -g @mariozechner/pi-coding-agent &>/dev/null 2>&1; then
   ok "Pi is already installed"
@@ -302,7 +312,7 @@ fi
 # 9. GitHub CLI
 # ──────────────────────────────────────────────
 
-section "9/18 — GitHub CLI"
+section "9/17 — GitHub CLI"
 
 if command -v gh &>/dev/null; then
   ok "GitHub CLI is already installed"
@@ -327,7 +337,7 @@ fi
 # 10. Sentry CLI
 # ──────────────────────────────────────────────
 
-section "10/18 — Sentry CLI"
+section "10/17 — Sentry CLI"
 
 if command -v sentry-cli &>/dev/null; then
   ok "Sentry CLI is already installed"
@@ -345,7 +355,7 @@ prompt_env_var "SENTRY_AUTH_TOKEN" "Get your auth token from https://sentry.io/s
 # 11. Tailscale
 # ──────────────────────────────────────────────
 
-section "11/18 — Tailscale"
+section "11/17 — Tailscale"
 
 if [ -d "/Applications/Tailscale.app" ]; then
   ok "Tailscale is installed"
