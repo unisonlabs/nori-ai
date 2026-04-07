@@ -4,11 +4,17 @@ Central home for AI/LLM infrastructure at Nori. This covers engineer setup on th
 
 ## For Engineers
 
-All Nori engineers work on a shared Mac mini remote dev environment. Setup is one script:
+All Nori engineers work on a shared Mac mini remote dev environment. On a fresh user account, first set up your SSH key for GitHub:
 
 ```bash
-git clone git@github.com:unisonlabs/nori-ai.git
-cd nori-ai
+curl -fsSL https://raw.githubusercontent.com/unisonlabs/nori-ai/main/scripts/bootstrap-ssh.sh | bash
+```
+
+Then clone and run setup:
+
+```bash
+git clone git@github.com:unisonlabs/nori-ai.git ~/nori/nori-ai
+cd ~/nori/nori-ai
 ./scripts/setup-engineer.sh
 ```
 

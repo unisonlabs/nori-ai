@@ -360,38 +360,10 @@ fi
 zshrc_add 'export PATH="/Applications/Tailscale.app/Contents/MacOS:$PATH"'
 
 # ──────────────────────────────────────────────
-# 12. SSH key for GitHub
+# 12. Oh My Zsh (optional)
 # ──────────────────────────────────────────────
 
-section "12/18 — SSH Key"
-
-if [ -f "$HOME/.ssh/id_ed25519" ]; then
-  ok "SSH key exists"
-  echo ""
-  echo "  Public key:"
-  cat "$HOME/.ssh/id_ed25519.pub"
-  echo ""
-  if ! confirm "Is this key already added to GitHub?"; then
-    echo "  Add it at: https://github.com/settings/keys"
-  fi
-else
-  echo "  Generating SSH key..."
-  read -r -p "  Enter your email for the SSH key: " ssh_email
-  ssh-keygen -t ed25519 -C "$ssh_email" -f "$HOME/.ssh/id_ed25519"
-  echo ""
-  echo "  Your public key:"
-  cat "$HOME/.ssh/id_ed25519.pub"
-  echo ""
-  echo "  Add it at: https://github.com/settings/keys"
-  read -r -p "  Press Enter when done..."
-  INSTALLED+=("SSH key")
-fi
-
-# ──────────────────────────────────────────────
-# 13. Oh My Zsh (optional)
-# ──────────────────────────────────────────────
-
-section "13/18 — Oh My Zsh (optional)"
+section "12/17 — Oh My Zsh (optional)"
 
 if [ -d "$HOME/.oh-my-zsh" ]; then
   ok "Oh My Zsh is already installed"
@@ -423,7 +395,7 @@ fi
 # 14. Clone repos
 # ──────────────────────────────────────────────
 
-section "14/18 — Clone Repos"
+section "13/17 — Clone Repos"
 
 read -r -p "  GitHub org [unisonlabs]: " gh_org
 gh_org="${gh_org:-unisonlabs}"
@@ -445,7 +417,7 @@ done
 # 15. Run make setup in each repo
 # ──────────────────────────────────────────────
 
-section "15/18 — Repo Setup"
+section "14/17 — Repo Setup"
 
 if [ -f "$HOME/nori/nori-backend/Makefile" ]; then
   if confirm "Run 'make setup' in nori-backend?"; then
@@ -465,7 +437,7 @@ fi
 # 16. API Keys
 # ──────────────────────────────────────────────
 
-section "16/18 — API Keys"
+section "15/17 — API Keys"
 
 setup_env_sourcing
 
@@ -477,7 +449,7 @@ prompt_env_var "DATABASE_URL_PROD_READONLY" "Production database connection stri
 # 17. Mac mini settings
 # ──────────────────────────────────────────────
 
-section "17/18 — Mac Mini Settings"
+section "16/17 — Mac Mini Settings"
 
 if confirm "Disable sleep? (recommended for remote dev)"; then
   sudo systemsetup -setcomputersleep Never 2>/dev/null || warn "Could not disable sleep (may need Full Disk Access)"
@@ -493,7 +465,7 @@ fi
 # 18. MCP servers and hooks
 # ──────────────────────────────────────────────
 
-section "18/18 — MCP Servers & Hooks"
+section "17/17 — MCP Servers & Hooks"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
