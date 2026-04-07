@@ -8,7 +8,7 @@ This repo has two audiences:
 - **Engineers** — setup scripts and Claude Code playbook
 - **Agents** — AGENTS.md files loaded at agent startup
 
-README.md is engineer-facing. AGENTS.md files are agent-facing. Never mix the two.
+README.md is engineer-facing. AGENTS.md files are agent-facing.
 
 ## File layout
 
