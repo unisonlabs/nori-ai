@@ -288,12 +288,12 @@ fi
 
 section "8/18 — Pi (coding agent)"
 
-if command -v pi &>/dev/null || npm list -g @mariozachner/pi-coding-agent &>/dev/null 2>&1; then
+if command -v pi &>/dev/null || npm list -g @mariozechner/pi-coding-agent &>/dev/null 2>&1; then
   ok "Pi is already installed"
   SKIPPED+=("Pi")
 else
   echo "  Installing Pi coding agent..."
-  npm install -g @mariozachner/pi-coding-agent
+  npm install -g @mariozechner/pi-coding-agent
   ok "Pi installed"
   INSTALLED+=("Pi")
 fi

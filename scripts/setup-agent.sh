@@ -160,12 +160,12 @@ setup_agent_mom() {
 
   _section "Installing Mom for $username"
 
-  if _as_agent "$username" "npm list -g @mariozachner/pi-mom &>/dev/null 2>&1"; then
+  if _as_agent "$username" "npm list -g @mariozechner/pi-mom &>/dev/null 2>&1"; then
     _ok "Mom is already installed for $username"
     return
   fi
 
-  _as_agent "$username" "npm install -g @mariozachner/pi-mom"
+  _as_agent "$username" "npm install -g @mariozechner/pi-mom"
   _ok "Mom installed for $username"
 }
 
