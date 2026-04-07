@@ -412,7 +412,7 @@ gh_org="${gh_org:-unisonlabs}"
 
 mkdir -p "$HOME/nori"
 
-for repo in nori-backend nori-mobile nori-ai; do
+for repo in nori-backend nori-mobile nori-marketing nori-admin nori-ai; do
   if [ -d "$HOME/nori/$repo" ]; then
     ok "$repo already cloned"
   else
