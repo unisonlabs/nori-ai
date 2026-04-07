@@ -210,17 +210,31 @@ fi
 zshrc_add 'export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"'
 export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 
-# Start as brew service
-if brew services list 2>/dev/null | grep -q "postgresql@17.*started"; then
-  ok "PostgreSQL 17 is already running"
-elif pg_isready -q 2>/dev/null; then
-  ok "PostgreSQL 17 is already running (started by another user)"
+# Per-user PostgreSQL: each user gets their own data dir and port
+PG_DATA="$HOME/pgdata"
+PG_PORT=$(( $(id -u) - 500 + 5432 ))
+zshrc_add "export PGDATA=\"$PG_DATA\""
+zshrc_add "export PGPORT=$PG_PORT"
+export PGDATA="$PG_DATA"
+export PGPORT="$PG_PORT"
+
+if [ ! -d "$PG_DATA" ]; then
+  echo "  Initializing PostgreSQL data directory at $PG_DATA (port $PG_PORT)..."
+  initdb -D "$PG_DATA" --auth=trust
+  # Set the port in postgresql.conf
+  sed -i '' "s/^#port = 5432/port = $PG_PORT/" "$PG_DATA/postgresql.conf"
+  ok "PostgreSQL data directory initialized (port $PG_PORT)"
 else
-  brew services start postgresql@17 2>/dev/null || {
-    warn "Could not start PostgreSQL as a brew service (no GUI session)"
-    echo "  If another user on this Mac mini is already running PostgreSQL, that's fine."
-    echo "  Otherwise, log in via the macOS GUI and run: brew services start postgresql@17"
-  }
+  ok "PostgreSQL data directory already exists at $PG_DATA"
+fi
+
+if pg_isready -q -p "$PG_PORT" 2>/dev/null; then
+  ok "PostgreSQL is already running on port $PG_PORT"
+else
+  echo "  Starting PostgreSQL on port $PG_PORT..."
+  pg_ctl -D "$PG_DATA" -l "$PG_DATA/server.log" start
+  sleep 2
+  ok "PostgreSQL started on port $PG_PORT"
 fi
 
 # pgvector
@@ -230,6 +244,17 @@ else
   echo "  Installing pgvector..."
   brew install pgvector
   ok "pgvector installed"
+fi
+
+# Link pgvector into this user's PostgreSQL if needed
+PG_EXT_DIR="$(pg_config --sharedir)/extension"
+PG_LIB_DIR="$(pg_config --pkglibdir)"
+PGVECTOR_CELLAR="$(brew --cellar pgvector)/$(brew list --versions pgvector | awk '{print $2}')"
+if [ ! -f "$PG_EXT_DIR/vector.control" ] && [ -d "$PGVECTOR_CELLAR" ]; then
+  echo "  Linking pgvector into PostgreSQL..."
+  cp "$PGVECTOR_CELLAR"/share/postgresql@17/extension/* "$PG_EXT_DIR/" 2>/dev/null || true
+  cp "$PGVECTOR_CELLAR"/lib/postgresql@17/vector.dylib "$PG_LIB_DIR/" 2>/dev/null || true
+  ok "pgvector linked"
 fi
 
 # ──────────────────────────────────────────────
@@ -248,16 +273,17 @@ else
   INSTALLED+=("Redis")
 fi
 
-if brew services list 2>/dev/null | grep -q "redis.*started"; then
-  ok "Redis is already running"
-elif redis-cli ping &>/dev/null; then
-  ok "Redis is already running (started by another user)"
+# Per-user Redis: each user gets their own port
+REDIS_PORT=$(( $(id -u) - 500 + 6379 ))
+zshrc_add "export REDIS_PORT=$REDIS_PORT"
+export REDIS_PORT="$REDIS_PORT"
+
+if redis-cli -p "$REDIS_PORT" ping &>/dev/null; then
+  ok "Redis is already running on port $REDIS_PORT"
 else
-  brew services start redis 2>/dev/null || {
-    warn "Could not start Redis as a brew service (no GUI session)"
-    echo "  If another user on this Mac mini is already running Redis, that's fine."
-    echo "  Otherwise, log in via the macOS GUI and run: brew services start redis"
-  }
+  echo "  Starting Redis on port $REDIS_PORT..."
+  redis-server --port "$REDIS_PORT" --daemonize yes --dir "$HOME" --logfile "$HOME/redis.log"
+  ok "Redis started on port $REDIS_PORT"
 fi
 
 # ──────────────────────────────────────────────
