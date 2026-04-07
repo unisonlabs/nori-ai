@@ -212,7 +212,7 @@ setup_agent_repos() {
       _ok "$repo already cloned"
     else
       echo "  Cloning $repo..."
-      _as_agent "$username" "git clone https://github.com/${org}/${repo}.git ~/nori/$repo"
+      _as_agent "$username" "gh repo clone ${org}/${repo} ~/nori/$repo"
       _ok "$repo cloned"
     fi
   done
@@ -273,72 +273,21 @@ setup_agent_credentials() {
 # ──────────────────────────────────────────────
 # setup_agent_process <username> <command>
 # Installs a launchd plist for the agent process.
-# Auto-starts on boot, auto-restarts on crash.
+# Uses a LaunchDaemon (/Library/LaunchDaemons/) so the agent starts on
+# boot without requiring a GUI login — appropriate for headless Mac minis.
+# Auto-restarts on crash via KeepAlive.
 # ──────────────────────────────────────────────
 setup_agent_process() {
   local username="$1"
   local command="$2"
   local agent_home="/Users/$username"
   local plist_label="com.nori.${username}"
-  local plist_path="$agent_home/Library/LaunchAgents/${plist_label}.plist"
+  local plist_path="/Library/LaunchDaemons/${plist_label}.plist"
   local log_dir="$agent_home/nori/nori-agent/data/logs"
 
   _section "Setting up launchd process for $username"
 
-  # Ensure LaunchAgents dir exists
-  _as_agent "$username" "mkdir -p ~/Library/LaunchAgents"
   _as_agent "$username" "mkdir -p '$log_dir'"
-
-  # Parse command into program and args for plist
-  local program
-  local args_xml=""
-  program=$(echo "$command" | awk '{print $1}')
-
-  # Resolve full path of the program
-  local program_path
-  program_path=$(_as_agent "$username" "which $program" 2>/dev/null || echo "$program")
-
-  # Build args XML
-  for arg in $command; do
-    args_xml="${args_xml}    <string>${arg}</string>
-"
-  done
-
-  # Write plist
-  sudo tee "$plist_path" >/dev/null <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>${plist_label}</string>
-  <key>ProgramArguments</key>
-  <array>
-${args_xml}  </array>
-  <key>WorkingDirectory</key>
-  <string>${agent_home}/nori</string>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>HOME</key>
-    <string>${agent_home}</string>
-    <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-  </dict>
-  <key>KeepAlive</key>
-  <true/>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>StandardOutPath</key>
-  <string>${log_dir}/mom.log</string>
-  <key>StandardErrorPath</key>
-  <string>${log_dir}/mom.log</string>
-  <key>UserName</key>
-  <string>${username}</string>
-</dict>
-</plist>
-EOF
-
-  sudo chown "$username:staff" "$plist_path"
 
   # Create a wrapper script that sources .env before running
   local wrapper_path="$agent_home/nori/nori-agent/run.sh"
@@ -350,7 +299,7 @@ EOF
   sudo chmod +x "$wrapper_path"
   sudo chown "$username:staff" "$wrapper_path"
 
-  # Update plist to use wrapper
+  # Write LaunchDaemon plist (runs as the agent user, starts on boot)
   sudo tee "$plist_path" >/dev/null <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -372,6 +321,8 @@ EOF
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
+  <key>UserName</key>
+  <string>${username}</string>
   <key>KeepAlive</key>
   <true/>
   <key>RunAtLoad</key>
@@ -380,29 +331,28 @@ EOF
   <string>${log_dir}/mom.log</string>
   <key>StandardErrorPath</key>
   <string>${log_dir}/mom.log</string>
-  <key>UserName</key>
-  <string>${username}</string>
 </dict>
 </plist>
 EOF
 
-  sudo chown "$username:staff" "$plist_path"
+  sudo chown root:wheel "$plist_path"
+  sudo chmod 644 "$plist_path"
 
-  _ok "launchd plist created at $plist_path"
+  _ok "LaunchDaemon plist created at $plist_path"
   _ok "Wrapper script created at $wrapper_path (sources ~/.env)"
 
   # Load the plist
   if _confirm "Load and start the agent now?"; then
-    sudo launchctl bootstrap "gui/$(id -u "$username")" "$plist_path" 2>/dev/null || \
+    sudo launchctl bootstrap system "$plist_path" 2>/dev/null || \
       sudo launchctl load "$plist_path" 2>/dev/null || \
-      _warn "Could not load plist — you may need to log in as $username first"
+      _warn "Could not load plist — try: sudo launchctl load $plist_path"
     _ok "Agent process started"
   fi
 
   echo ""
   echo "  Useful commands:"
-  echo "    launchctl list | grep $username"
+  echo "    sudo launchctl list | grep $username"
   echo "    tail -f $log_dir/mom.log"
-  echo "    launchctl stop $plist_label"
-  echo "    launchctl start $plist_label"
+  echo "    sudo launchctl stop $plist_label"
+  echo "    sudo launchctl start $plist_label"
 }

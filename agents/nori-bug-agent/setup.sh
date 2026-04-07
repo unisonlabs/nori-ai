@@ -18,7 +18,6 @@ setup_agent_node "nori-bug-agent"
 setup_agent_clis "nori-bug-agent"
 setup_agent_mom "nori-bug-agent"
 setup_agent_workspace "nori-bug-agent" "/Users/nori-bug-agent/nori/nori-agent/data"
-setup_agent_repos "nori-bug-agent" "unisonlabs" "nori-backend" "nori-mobile"
 setup_agent_credentials "nori-bug-agent" \
   "ANTHROPIC_API_KEY \
    MOM_SLACK_APP_TOKEN \
@@ -30,6 +29,7 @@ setup_agent_credentials "nori-bug-agent" \
    LANGSMITH_API_KEY \
    HELPSCOUT_APP_ID \
    HELPSCOUT_APP_SECRET"
+setup_agent_repos "nori-bug-agent" "unisonlabs" "nori-backend" "nori-mobile"
 setup_agent_process "nori-bug-agent" \
   "mom --data /Users/nori-bug-agent/nori/nori-agent/data"
 

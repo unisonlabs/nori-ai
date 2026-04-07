@@ -98,7 +98,7 @@ Each agent:
 
 Check if the agent process is running:
 ```bash
-launchctl list | grep nori-bug-agent
+sudo launchctl list | grep nori-bug-agent
 ```
 
 Check logs:
@@ -108,8 +108,8 @@ tail -f /Users/nori-bug-agent/nori/nori-agent/data/logs/mom.log
 
 Restart the agent:
 ```bash
-launchctl stop com.nori.nori-bug-agent
-launchctl start com.nori.nori-bug-agent
+sudo launchctl stop com.nori.nori-bug-agent
+sudo launchctl start com.nori.nori-bug-agent
 ```
 
 SSH in as the agent user to inspect her workspace:
@@ -121,7 +121,7 @@ cat ~/nori/nori-agent/data/learnings.md
 
 ### Process supervision
 
-Agents run via launchd (macOS native process supervision) rather than tmux. launchd auto-restarts the agent if it crashes and starts it automatically on Mac mini reboot. Logs are written to the agent's data directory.
+Agents run via launchd LaunchDaemons (macOS native process supervision) rather than tmux. LaunchDaemons run in the system domain, meaning they start on boot without requiring a GUI login — critical for headless Mac minis. launchd auto-restarts the agent if it crashes. Logs are written to the agent's data directory.
 
 > **Note on Docker:** Docker was evaluated and deprioritized due to macOS/Linux mismatch friction (agents can't use brew, keychain, or native tools inside a Linux container). launchd + isolated macOS users provides equivalent isolation with less complexity. Docker may be revisited if the agent fleet grows significantly.
 

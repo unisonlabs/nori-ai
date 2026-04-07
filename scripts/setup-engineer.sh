@@ -184,7 +184,7 @@ if command -v poetry &>/dev/null; then
   SKIPPED+=("Poetry")
 else
   echo "  Installing Poetry..."
-  pip install poetry
+  curl -sSL https://install.python-poetry.org | python3 -
   zshrc_add 'export PATH="$HOME/.local/bin:$PATH"'
   export PATH="$HOME/.local/bin:$PATH"
   ok "Poetry installed"
