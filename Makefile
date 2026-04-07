@@ -1,16 +1,31 @@
-.PHONY: setup mcps hooks plugins check
+.PHONY: setup setup-engineer setup-bug-agent mcps hooks plugins check
 
 # ──────────────────────────────────────────────
-# Full setup — run this on day one
+# Engineer setup — remote dev environment
 # ──────────────────────────────────────────────
 
-setup: mcps hooks plugins
-	@echo ""
-	@echo "Setup complete. Run 'make check' to verify."
+setup-engineer:
+	@./scripts/setup-engineer.sh
+
+# Backwards compat — setup now calls setup-engineer.sh as single source of truth
+setup: setup-engineer
+
+# ──────────────────────────────────────────────
+# Agent setup
+# ──────────────────────────────────────────────
+
+setup-bug-agent:
+	@./agents/nori-bug-agent/setup.sh
 
 # ──────────────────────────────────────────────
 # MCP Servers
 # ──────────────────────────────────────────────
+# Tool access philosophy (for agents and engineers):
+# 1. CLI — preferred (gh, sentry-cli, psql)
+# 2. curl — preferred over MCP for headless/remote environments (no OAuth re-auth)
+# 3. MCP — fallback only where CLI and curl aren't viable
+# Note: MCPs require browser-based OAuth re-auth which is painful on headless Mac mini setups.
+# The CLIs and API keys installed by setup-engineer.sh are the primary way agents access external services.
 
 mcps: mcp-linear mcp-betterstack mcp-sentry mcp-postgres mcp-context7 mcp-helpscout mcp-langsmith mcp-github
 

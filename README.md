@@ -1,62 +1,51 @@
-# Claude Code: Skills, Tips & Best Practices
+# nori-ai
 
-Our team's setup and playbook for Claude Code.
+Central home for AI/LLM infrastructure at Nori. This covers engineer setup on the Mac mini remote dev environment and the always-on agent infrastructure (Mom/Pi).
 
-## Getting Started
+## For Engineers
+
+All Nori engineers work on a shared Mac mini remote dev environment. Setup is one script:
 
 ```bash
-git clone git@github.com:unisonlabs/claude-skills-tips.git
-cd claude-skills-tips
-make setup
+git clone git@github.com:unisonlabs/nori-ai.git
+cd nori-ai
+./scripts/setup-engineer.sh
 ```
 
-`make setup` installs MCP servers and configures notification hooks. Some MCPs require credentials — the Makefile will prompt you with instructions for those. After setup, **open Claude Code and run `/plugin`** to enable plugins (this step can't be automated):
+This installs everything you need: Homebrew, Python, Node, PostgreSQL, Redis, Claude Code, Pi, GitHub CLI, Sentry CLI, Tailscale, MCP servers, hooks, and clones the Nori repos. Run it on a fresh Mac mini user account. It's interactive and idempotent — safe to re-run.
 
+After setup, open Claude Code and run `/plugin` to enable plugins (this can't be automated):
 - pr-review-toolkit
 - code-simplifier
 - figma
 - github
 - swift-lsp
-- codex ([openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc)) — requires `npm install -g @openai/codex` + OpenAI API key or ChatGPT subscription
+- codex
 
 Run `make check` at any time to verify your setup.
+
+## For Agents
+
+Agent configs and guardrails live in `agents/`. Each agent runs as its own isolated macOS user on the Mac mini with scoped credentials and its own workspace.
+
+| Agent | User | Slack channel | Setup |
+|-------|------|---------------|-------|
+| Bug agent | `nori-bug-agent` | `#nori-errors` | `make setup-bug-agent` |
 
 ## What's in this repo
 
 | Path | What it is |
 |------|-----------|
-| [GUIDE.md](GUIDE.md) | The full playbook — tools, tips, workflows |
-| [Makefile](Makefile) | Automated setup for MCPs, hooks, plugins |
-| [hooks.json](hooks.json) | Notification hook definitions |
-
-## Skills
-
-Skills are committed in each project repo under `.claude/skills/` — they're shared with the team via git, not installed separately.
-
-| Skill | What it does | Repos |
-|-------|-------------|-------|
-| `/fix-issue` | Fix a Linear ticket end-to-end | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/fix-issue/SKILL.md) · [mobile](https://github.com/unisonlabs/nori-mobile/blob/main/.claude/skills/fix-issue/SKILL.md) |
-| `/review-my-changes` | Self-review changes before PR | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/review-my-changes/SKILL.md) · [mobile](https://github.com/unisonlabs/nori-mobile/blob/main/.claude/skills/review-my-changes/SKILL.md) |
-| `/security-audit` | OWASP Top 10 + secret scan + dependency audit | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/security-audit/SKILL.md) · [mobile](https://github.com/unisonlabs/nori-mobile/blob/main/.claude/skills/security-audit/SKILL.md) |
-| `/deps-check` | Audit dependencies for vulnerabilities and staleness | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/deps-check/SKILL.md) · [mobile](https://github.com/unisonlabs/nori-mobile/blob/main/.claude/skills/deps-check/SKILL.md) |
-| `/incident-response` | Correlate Sentry + BetterStack + deploys for incidents | [backend](https://github.com/unisonlabs/nori-backend/blob/main/.claude/skills/incident-response/SKILL.md) |
-| `/codex:setup` | Verify Codex CLI installation and configure review gates | plugin: [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc) |
-| `/codex:rescue` | Delegate investigation or fix to Codex | plugin |
-| `/codex:review` | Read-only code review via Codex | plugin |
-| `/codex:adversarial-review` | Challenge review questioning design decisions | plugin |
+| `GUIDE.md` | Full Claude Code playbook — tools, tips, workflows |
+| `Makefile` | Automated setup targets |
+| `hooks.json` | Notification hook definitions |
+| `scripts/setup-engineer.sh` | Engineer setup script |
+| `agents/nori-bug-agent/` | Bug agent config and setup |
 
 ## Related Repos
 
 | Repo | What it is |
 |------|-----------|
-| [nori-backend](https://github.com/unisonlabs/nori-backend) | FastAPI backend — see its [CLAUDE.md](https://github.com/unisonlabs/nori-backend/blob/main/CLAUDE.md) and subdirectory CLAUDE.md files for conventions |
-| [nori-mobile](https://github.com/unisonlabs/nori-mobile) | React Native / Expo mobile app — see its [CLAUDE.md](https://github.com/unisonlabs/nori-mobile/blob/main/CLAUDE.md) |
-| [codepipe](https://github.com/unisonlabs/codepipe) | Pipeline orchestrator for multi-task Claude workflows — see [examples/nori_defaults.py](https://github.com/unisonlabs/codepipe/blob/main/examples/nori_defaults.py) for our shared pipeline config |
-
-## External Resources
-
-- [Claude Code Docs](https://docs.anthropic.com/en/docs/claude-code) — official reference
-- [Claude Code Best Practices](https://docs.anthropic.com/en/docs/claude-code/best-practices) — Anthropic's recommendations
-- [Hooks Reference](https://docs.anthropic.com/en/docs/claude-code/hooks) — all hook events, schemas, and patterns
-- [Skills Reference](https://docs.anthropic.com/en/docs/claude-code/skills) — how to write and use skills
-- [MCP Server Docs](https://docs.anthropic.com/en/docs/claude-code/mcp-servers) — MCP setup and configuration
+| [nori-backend](https://github.com/unisonlabs/nori-backend) | FastAPI backend |
+| [nori-mobile](https://github.com/unisonlabs/nori-mobile) | React Native / Expo mobile app |
+| [codepipe](https://github.com/unisonlabs/codepipe) | Pipeline orchestrator for multi-task Claude workflows |

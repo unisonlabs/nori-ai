@@ -16,18 +16,20 @@ For background on Claude Code concepts, see the [official docs](https://docs.ant
 
 We only adopt MCPs that are (1) officially maintained by the product owner or (2) actively maintained with strong community adoption.
 
-**Note:** We prefer CLIs over MCPs where both are available. For example, Claude uses `gh` (GitHub CLI) effectively for most PR/issue workflows — the GitHub MCP is optional and mainly useful for cross-repo searches. If a tool has a good CLI, try that first. cURL works quite well, over MCPs, too.
+> **Tool access philosophy:** CLI over curl over MCP — in that order of preference. MCPs require browser-based OAuth re-auth which is painful on headless Mac mini setups. Use CLIs and direct API calls where possible. MCPs are a fallback for services with no good CLI or API.
 
-| MCP | What it gives Claude | Auth |
-|-----|---------------------|------|
-| **Linear** | Read/create/update issues, projects, cycles | OAuth (browser prompt) |
-| **BetterStack** | Query logs, uptime monitors, dashboards | OAuth (browser prompt) |
-| **Sentry** | Error issues, stack traces, release health, Seer AI analysis | OAuth (browser prompt) |
-| **PostgreSQL** | Read-only access to dev and production DBs — schema, queries, data | `DATABASE_URL` env var |
-| **Context7** | Up-to-date library docs (Expo, React Native, FastAPI, etc.) | None (optional API key for rate limits) |
-| **Help Scout** | Customer conversations, threads, inboxes | OAuth2 Client Credentials |
-| **LangSmith** | Agent traces, prompts, datasets, experiments | API key + workspace ID |
-| **GitHub** | Repos, PRs, issues, code search | PAT with `repo` scope — optional if `gh` CLI is authenticated |
+**We prefer CLIs and direct API calls over MCPs.** The priority order is: CLI → curl → MCP. On the Mac mini remote dev environment, MCPs require periodic OAuth re-auth via browser which is disruptive for long-running agent sessions. `gh` for GitHub, `sentry-cli` for Sentry, and `psql` for databases are the primary tools. For services without a good CLI (Linear, BetterStack, Help Scout, LangSmith), use curl with API keys stored in environment variables.
+
+| MCP | What it gives Claude | CLI/curl alternative | Auth |
+|-----|---------------------|----------------------|------|
+| **Linear** | Read/create/update issues, projects, cycles | curl to Linear GraphQL API | OAuth (browser prompt) |
+| **BetterStack** | Query logs, uptime monitors, dashboards | curl to BetterStack API | OAuth (browser prompt) |
+| **Sentry** | Error issues, stack traces, release health, Seer AI analysis | `sentry-cli` | OAuth (browser prompt) |
+| **PostgreSQL** | Read-only access to dev and production DBs — schema, queries, data | `psql` with readonly connection string | `DATABASE_URL` env var |
+| **Context7** | Up-to-date library docs (Expo, React Native, FastAPI, etc.) | curl | None (optional API key for rate limits) |
+| **Help Scout** | Customer conversations, threads, inboxes | curl to Help Scout API | OAuth2 Client Credentials |
+| **LangSmith** | Agent traces, prompts, datasets, experiments | curl to LangSmith API | API key + workspace ID |
+| **GitHub** | Repos, PRs, issues, code search | `gh` CLI (preferred) | PAT with `repo` scope — optional if `gh` CLI is authenticated |
 
 All servers are installed with `--scope user` (global). Run `make mcps` to install the OAuth-based ones automatically. For the credential-based ones (Help Scout, LangSmith, GitHub), `make setup` prints the exact commands — you just fill in your keys.
 
@@ -49,6 +51,79 @@ Enable via `/plugin` inside Claude Code (can't be automated):
 | **github** | GitHub-aware skills and workflows. |
 | **swift-lsp** | LSP-powered symbol navigation and error detection for Swift native modules. |
 | **codex** ([openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc)) | Delegate tasks to OpenAI Codex from Claude Code. `/codex:rescue` for investigation/fixes, `/codex:review` for code review, `/codex:adversarial-review` for challenge reviews. Requires `npm install -g @openai/codex`. |
+
+---
+
+## Agent Infrastructure
+
+Nori runs always-on autonomous agents on the Mac mini. Each agent is a dedicated macOS user running [Mom](https://github.com/badlogic/pi-mono/tree/main/packages/mom) (a Slack-connected wrapper around the Pi coding agent) with scoped credentials and an isolated workspace.
+
+### Architecture
+
+```
+Slack channel (#nori-errors)
+    ↓ @mention
+Mom bot (running as nori-bug-agent macOS user)
+    ↓
+Pi agent (Read, Write, Edit, Bash tools)
+    ↓ investigates using CLI tools and curl
+GitHub, Sentry, Linear, BetterStack, LangSmith, Help Scout, PostgreSQL (readonly)
+    ↓
+Opens PR → posts link in Slack → waits for human review
+```
+
+Each agent:
+- Runs as its own macOS user with a separate home directory
+- Has only the credentials it needs (scoped readonly tokens where possible)
+- Cannot access other users' home directories
+- Has an AGENTS.md that defines its purpose, guardrails, and self-improvement instructions
+- Learns over time by documenting findings and building reusable tools
+
+### Current agents
+
+| Agent | macOS user | Slack channel | Purpose |
+|-------|-----------|---------------|---------|
+| Bug agent | `nori-bug-agent` | `#nori-errors` | Investigate and fix bugs from Sentry |
+
+### Adding a new agent
+
+1. Create `agents/<agent-name>/` in nori-ai repo
+2. Write `AGENTS.md` — purpose, tools, guardrails, self-improvement instructions
+3. Write `setup.sh` — calls `scripts/setup-agent.sh` with agent config
+4. Add `make setup-<agent-name>` to Makefile
+5. Add to the agents table in README.md and this guide
+6. Create the Slack channel and invite the bot
+
+### Debugging agents
+
+Check if the agent process is running:
+```bash
+sudo launchctl list | grep nori-bug-agent
+```
+
+Check logs:
+```bash
+tail -f /Users/nori-bug-agent/nori/nori-agent/data/logs/mom.log
+```
+
+Restart the agent:
+```bash
+sudo launchctl stop com.nori.nori-bug-agent
+sudo launchctl start com.nori.nori-bug-agent
+```
+
+SSH in as the agent user to inspect her workspace:
+```bash
+sudo su - nori-bug-agent
+ls ~/nori/nori-agent/data/
+cat ~/nori/nori-agent/data/learnings.md
+```
+
+### Process supervision
+
+Agents run via launchd LaunchDaemons (macOS native process supervision) rather than tmux. LaunchDaemons run in the system domain, meaning they start on boot without requiring a GUI login — critical for headless Mac minis. launchd auto-restarts the agent if it crashes. Logs are written to the agent's data directory.
+
+> **Note on Docker:** Docker was evaluated and deprioritized due to macOS/Linux mismatch friction (agents can't use brew, keychain, or native tools inside a Linux container). launchd + isolated macOS users provides equivalent isolation with less complexity. Docker may be revisited if the agent fleet grows significantly.
 
 ---
 
