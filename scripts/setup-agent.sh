@@ -210,11 +210,11 @@ setup_agent_repos() {
   for repo in "$@"; do
     if _as_agent "$username" "[ -d ~/nori/$repo ]"; then
       echo "  Updating $repo..."
-      _as_agent "$username" "cd ~/nori/$repo && git pull" 2>/dev/null || _warn "Could not pull $repo"
+      _as_agent "$username" "source ~/.env 2>/dev/null; cd ~/nori/$repo && GH_TOKEN=\$GITHUB_TOKEN git pull" 2>/dev/null || _warn "Could not pull $repo"
       _ok "$repo up to date"
     else
       echo "  Cloning $repo..."
-      _as_agent "$username" "gh repo clone ${org}/${repo} ~/nori/$repo"
+      _as_agent "$username" "source ~/.env 2>/dev/null; GH_TOKEN=\$GITHUB_TOKEN gh repo clone ${org}/${repo} ~/nori/$repo"
       _ok "$repo cloned"
     fi
   done
