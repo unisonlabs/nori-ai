@@ -440,7 +440,9 @@ mkdir -p "$HOME/nori"
 
 for repo in nori-backend nori-mobile nori-marketing nori-admin nori-ai; do
   if [ -d "$HOME/nori/$repo" ]; then
-    ok "$repo already cloned"
+    echo "  Updating $repo..."
+    (cd "$HOME/nori/$repo" && git pull) 2>/dev/null || warn "Could not pull $repo"
+    ok "$repo up to date"
   else
     echo "  Cloning $repo..."
     git clone "git@github.com:${gh_org}/${repo}.git" "$HOME/nori/$repo"
