@@ -44,7 +44,7 @@ Agent configs and guardrails live in `agents/`. Each agent runs as its own isola
 2. `setup.sh` sources `scripts/setup-agent.sh` and calls the shared functions — see `agents/nori-bug-agent/setup.sh` as a template
 3. Add `make setup-<agent-name>` to the Makefile
 4. Add to the agents table above
-5. Create a Slack app and invite the bot to its channel
+5. Create a new Slack app for the bot (each agent needs its own app/bot tokens) and invite it to its channel
 
 See [GUIDE.md](GUIDE.md#agent-infrastructure) for the full architecture, debugging commands, and process supervision details.
 
