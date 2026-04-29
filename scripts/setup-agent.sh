@@ -44,6 +44,18 @@ _as_agent() {
   sudo su - "$username" -c "$*"
 }
 
+# Append a line to the agent's ~/.zshrc if not already present (idempotent).
+_zshrc_add_agent() {
+  local username="$1"
+  local line="$2"
+  local zshrc="/Users/$username/.zshrc"
+
+  if ! sudo grep -qxF -- "$line" "$zshrc" 2>/dev/null; then
+    echo "$line" | sudo tee -a "$zshrc" >/dev/null
+    sudo chown "$username:staff" "$zshrc"
+  fi
+}
+
 # ──────────────────────────────────────────────
 # setup_agent_user <username> <realname> <suggested_uid>
 # Creates a macOS user for the agent if it doesn't exist.
@@ -125,6 +137,78 @@ setup_agent_node() {
 
   _as_agent "$username" "brew install node"
   _ok "Node.js installed for $username"
+}
+
+# ──────────────────────────────────────────────
+# setup_agent_python <username>
+# Installs pyenv + Python 3.11.11 + Poetry for the agent user.
+# Mirrors steps 2-3 of setup-engineer.sh so agents can run backend code
+# (poetry install, pytest, scripts, migrations).
+# ──────────────────────────────────────────────
+setup_agent_python() {
+  local username="$1"
+
+  _section "Installing Python toolchain for $username"
+
+  # pyenv
+  if _as_agent "$username" "command -v pyenv &>/dev/null"; then
+    _ok "pyenv already installed"
+  else
+    _as_agent "$username" "brew install pyenv"
+    _ok "pyenv installed"
+  fi
+
+  # Persist pyenv init in .zshrc (idempotent)
+  _zshrc_add_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"'
+  _zshrc_add_agent "$username" '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"'
+  _zshrc_add_agent "$username" 'eval "$(pyenv init -)"'
+
+  # Python 3.11.11
+  if _as_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"; export PATH="$PYENV_ROOT/bin:$PATH"; pyenv versions 2>/dev/null | grep -q 3.11.11'; then
+    _ok "Python 3.11.11 already installed"
+  else
+    echo "  Installing Python 3.11.11 via pyenv (this can take a few minutes)..."
+    _as_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"; export PATH="$PYENV_ROOT/bin:$PATH"; pyenv install 3.11.11'
+    _ok "Python 3.11.11 installed"
+  fi
+
+  _as_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"; export PATH="$PYENV_ROOT/bin:$PATH"; pyenv global 3.11.11'
+  _ok "Python 3.11.11 set as global"
+
+  # Poetry (installed via official installer into ~/.local/bin)
+  if _as_agent "$username" '[ -x "$HOME/.local/bin/poetry" ] || command -v poetry &>/dev/null'; then
+    _ok "Poetry already installed"
+  else
+    _as_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"; export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; curl -sSL https://install.python-poetry.org | python3 -'
+    _ok "Poetry installed"
+  fi
+
+  _zshrc_add_agent "$username" 'export PATH="$HOME/.local/bin:$PATH"'
+}
+
+# ──────────────────────────────────────────────
+# setup_agent_poetry_install <username> <repo>
+# Runs `poetry install` in ~/nori/<repo> as the agent user.
+# Assumes setup_agent_python and setup_agent_repos have already run.
+# ──────────────────────────────────────────────
+setup_agent_poetry_install() {
+  local username="$1"
+  local repo="$2"
+
+  _section "Running poetry install in $repo for $username"
+
+  if ! _as_agent "$username" "[ -d ~/nori/$repo ]"; then
+    _warn "~/nori/$repo not found; skipping (run setup_agent_repos first)"
+    return
+  fi
+
+  if ! _as_agent "$username" "[ -f ~/nori/$repo/pyproject.toml ]"; then
+    _warn "~/nori/$repo has no pyproject.toml; skipping"
+    return
+  fi
+
+  _as_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"; export PATH="$HOME/.local/bin:$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; cd ~/nori/'"$repo"' && poetry install'
+  _ok "poetry install complete in $repo"
 }
 
 # ──────────────────────────────────────────────
@@ -321,7 +405,7 @@ EOF
     <key>HOME</key>
     <string>${agent_home}</string>
     <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <string>${agent_home}/.local/bin:${agent_home}/.pyenv/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
   <key>UserName</key>
   <string>${username}</string>
