@@ -195,6 +195,39 @@ setup_agent_python() {
 }
 
 # ──────────────────────────────────────────────
+# setup_agent_backend_dotenv <username> <repo>
+# Provisions ~/nori/<repo>/.env.test from templates/<repo>.env.test if a
+# template exists. Templates use only `<test-placeholder>` for credentials and
+# real values for things tests actually need (postgres URL, redis, etc.). Lets
+# agents satisfy pydantic Settings boot-up without holding real secrets.
+# ──────────────────────────────────────────────
+setup_agent_backend_dotenv() {
+  local username="$1"
+  local repo="$2"
+  local template_dir
+  template_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../templates" && pwd)"
+  local template="$template_dir/${repo}.env.test"
+  local target="/Users/$username/nori/$repo/.env.test"
+
+  _section "Provisioning $repo/.env.test for $username"
+
+  if [ ! -f "$template" ]; then
+    _warn "No template at $template; skipping"
+    return
+  fi
+
+  if ! sudo test -d "/Users/$username/nori/$repo"; then
+    _warn "/Users/$username/nori/$repo not found; run setup_agent_repos first"
+    return
+  fi
+
+  sudo cp "$template" "$target"
+  sudo chown "$username:staff" "$target"
+  sudo chmod 600 "$target"
+  _ok ".env.test written from template (mode 600)"
+}
+
+# ──────────────────────────────────────────────
 # setup_agent_poetry_install <username> <repo>
 # Runs `poetry install` in ~/nori/<repo> as the agent user.
 # Assumes setup_agent_python and setup_agent_repos have already run.

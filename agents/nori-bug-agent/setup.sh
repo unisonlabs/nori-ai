@@ -32,6 +32,7 @@ setup_agent_credentials "nori-bug-agent" \
    HELPSCOUT_APP_SECRET"
 setup_agent_repos "nori-bug-agent" "unisonlabs" "nori-backend" "nori-mobile" "nori-marketing" "nori-admin"
 setup_agent_poetry_install "nori-bug-agent" "nori-backend"
+setup_agent_backend_dotenv "nori-bug-agent" "nori-backend"
 setup_agent_process "nori-bug-agent" \
   "mom --data /Users/nori-bug-agent/nori/nori-agent/data"
 
