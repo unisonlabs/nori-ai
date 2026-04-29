@@ -15,6 +15,7 @@ echo ""
 setup_agent_user "nori-bug-agent" "Nori Bug Agent" "503"
 setup_agent_homebrew "nori-bug-agent"
 setup_agent_node "nori-bug-agent"
+setup_agent_python "nori-bug-agent"
 setup_agent_clis "nori-bug-agent"
 setup_agent_mom "nori-bug-agent"
 setup_agent_workspace "nori-bug-agent" "/Users/nori-bug-agent/nori/nori-agent/data"
@@ -30,6 +31,8 @@ setup_agent_credentials "nori-bug-agent" \
    HELPSCOUT_APP_ID \
    HELPSCOUT_APP_SECRET"
 setup_agent_repos "nori-bug-agent" "unisonlabs" "nori-backend" "nori-mobile" "nori-marketing" "nori-admin"
+setup_agent_poetry_install "nori-bug-agent" "nori-backend"
+setup_agent_backend_dotenv "nori-bug-agent" "nori-backend"
 setup_agent_process "nori-bug-agent" \
   "mom --data /Users/nori-bug-agent/nori/nori-agent/data"
 
