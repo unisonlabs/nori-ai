@@ -44,15 +44,19 @@ _as_agent() {
   sudo su - "$username" -c "$*"
 }
 
-# Append a line to the agent's ~/.zshrc if not already present (idempotent).
-_zshrc_add_agent() {
+# Append a line to one of the agent's shell init files if not already present.
+# Idempotent. `_shellinit_add_agent <user> <file> <line>` where <file> is
+# either ".zshrc" (interactive shells) or ".zprofile" (all login shells, incl.
+# non-interactive — needed for `sudo su - <user> -c '...'`).
+_shellinit_add_agent() {
   local username="$1"
-  local line="$2"
-  local zshrc="/Users/$username/.zshrc"
+  local file="$2"
+  local line="$3"
+  local target="/Users/$username/$file"
 
-  if ! sudo grep -qxF -- "$line" "$zshrc" 2>/dev/null; then
-    echo "$line" | sudo tee -a "$zshrc" >/dev/null
-    sudo chown "$username:staff" "$zshrc"
+  if ! sudo grep -qxF -- "$line" "$target" 2>/dev/null; then
+    echo "$line" | sudo tee -a "$target" >/dev/null
+    sudo chown "$username:staff" "$target"
   fi
 }
 
@@ -158,10 +162,14 @@ setup_agent_python() {
     _ok "pyenv installed"
   fi
 
-  # Persist pyenv init in .zshrc (idempotent)
-  _zshrc_add_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"'
-  _zshrc_add_agent "$username" '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"'
-  _zshrc_add_agent "$username" 'eval "$(pyenv init -)"'
+  # PATH-bearing exports go in .zprofile so login non-interactive shells
+  # (e.g. `sudo su - <user> -c '...'`) see pyenv too. `pyenv init -` (which
+  # sets up shims and shell hooks) only matters in interactive shells, so it
+  # stays in .zshrc.
+  _shellinit_add_agent "$username" ".zprofile" 'export PYENV_ROOT="$HOME/.pyenv"'
+  _shellinit_add_agent "$username" ".zprofile" '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"'
+  _shellinit_add_agent "$username" ".zprofile" 'export PATH="$PYENV_ROOT/shims:$PATH"'
+  _shellinit_add_agent "$username" ".zshrc" 'eval "$(pyenv init -)"'
 
   # Python 3.11.11
   if _as_agent "$username" 'export PYENV_ROOT="$HOME/.pyenv"; export PATH="$PYENV_ROOT/bin:$PATH"; pyenv versions 2>/dev/null | grep -q 3.11.11'; then
@@ -183,7 +191,7 @@ setup_agent_python() {
     _ok "Poetry installed"
   fi
 
-  _zshrc_add_agent "$username" 'export PATH="$HOME/.local/bin:$PATH"'
+  _shellinit_add_agent "$username" ".zprofile" 'export PATH="$HOME/.local/bin:$PATH"'
 }
 
 # ──────────────────────────────────────────────
